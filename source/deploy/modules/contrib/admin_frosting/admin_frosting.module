@@ -1,0 +1,17 @@
+<?php
+/**
+ * @file
+ * Code for the Admin Frosting feature.
+ */
+
+include_once 'admin_frosting.features.inc';
+
+/**
+ * Implementation of hook_menu_alter().
+ */
+function admin_frosting_menu_alter(&$items) {
+  // Re-point the /admin/user/user/create path back to the User module's
+  // callback, since Views is taking over /admin/user/user.
+  $items['admin/people/create']['page callback'] = 'user_admin';
+  $items['admin/people/create']['file'] = 'user.admin.inc';
+}

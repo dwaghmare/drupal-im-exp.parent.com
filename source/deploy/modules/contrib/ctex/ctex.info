@@ -1,0 +1,13 @@
+name = Chaos Tools Export UI Template
+description = "Template for building modules based on the Chaos Tools Export UI"
+
+; Core version (required)
+core = 7.x
+
+dependencies[] = ctools
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "ctex"
+datestamp = "1380568255"
+

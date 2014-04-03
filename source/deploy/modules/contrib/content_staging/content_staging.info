@@ -1,0 +1,16 @@
+name = "Content Staging"
+description = "Pulls content from a staging repository"
+package = "Content"
+core = 7.x
+
+files[] = content_staging.install
+files[] = content_staging.module
+files[] = content_staging.inc
+files[] = content_staging.admin.inc
+
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "content_staging"
+datestamp = "1380567056"
+

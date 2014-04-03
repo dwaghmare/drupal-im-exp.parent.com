@@ -1,0 +1,78 @@
+<?php
+/**
+ * @file
+ * Drupal content staging using Writeup
+ * This file contains all the code that is different between Drupal 6 and 7
+ *
+ * @todo notes marked by 'todo'
+ */
+
+// These definitions allow identical include files for Drupal 6 & 7
+define('ADMIN_CS', 'admin/config/content_staging');
+define('SQL_ALIAS', "SELECT source FROM {url_alias} WHERE alias=:s;");
+define('SQL_REVISION', "SELECT log FROM {node} JOIN {node_revision} ON {node}.vid = {node_revision}.vid WHERE {node}.nid=:d;");
+include 'content_staging.admin.inc';
+include 'content_staging.inc';
+
+/**
+ * Implements hook_perm().
+ */
+function content_staging_perm() {
+  return array(
+    'view content status',
+    'update content from staging',
+    'administer Content Staging settings',
+  );
+}
+
+/**
+ * Abstraction of db_result that can be used in Drupal 6 or Drupal 7
+ *
+ * @param $sql
+ *   SQL string, including db_query style placeholders
+ *
+ * @param $args
+ *   An array of values to substitute into the query.This is an associative array in any order.
+ *
+ * @return
+ *   result of query
+ */
+function _cs_db_result($sql, $args) {
+  return db_query($sql, $args)->fetchField();
+}
+
+/**
+ * Abstraction of db_update that can be used in Drupal 6 or Drupal 7
+ * Note that this implementation is NOT general, but assumes 2 updated integers and an integer condition
+ *
+ * @param $table
+ *   The table to update.
+ *
+ * @param $fields
+ *   An array of fields and values to update them to.
+ *
+ * @param $cond
+ *   An array with three values: field, value, operator
+ */
+function _cs_db_update($table, $fields, $cond) {
+  db_update($table)
+    ->fields($fields)
+    ->condition($cond[0], $cond[1], $cond[2])
+    ->execute();
+}
+
+/**
+ * Update a node object's body
+ *
+ * @param $node
+ *   node object
+ *
+ * @param $body
+ *   text to go into body
+ */
+function _cs_node_body($node, $body) {
+  $node->body[$node->language][0]['value']   = $body;
+  $node->body[$node->language][0]['summary'] = text_summary($body);
+  if (variable_get('content_staging_textformat', '') != '') $node->body[$node->language][0]['format'] = variable_get('content_staging_textformat', '');
+}
+

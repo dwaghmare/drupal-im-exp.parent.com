@@ -1,0 +1,20 @@
+<?php
+/**
+ * @file
+ * Content Staging module install and uninstall hooks
+ * File is identical for Drupal 6 and 7
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function content_staging_uninstall() {
+  // Remove variables.
+  variable_del('content_staging_dir');
+  variable_del('content_staging_runstatus');
+  variable_del('content_staging_runupdate');
+  variable_del('content_staging_update');
+  variable_del('content_staging_textformat');
+  variable_del('writeup_loc');
+}
+

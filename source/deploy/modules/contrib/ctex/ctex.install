@@ -1,0 +1,64 @@
+<?php
+/**
+ * @file
+ * Install file for ctex
+ *
+ * @copyright Copyright(c) 2012 Christopher Skene
+ * @license GPL v2 http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Chris Skene chris at xtfer dot com
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function ctex_schema() {
+  $schema['ctex_preset'] = array(
+    'description' => 'presets for the ctex module',
+    'export' => array(
+      'key' => 'name',
+      // Exports will be as $preset.
+      'identifier' => 'preset',
+      // Function hook name.
+      'default hook' => 'default_ctex_preset',
+      'api' => array(
+        'owner' => 'ctex',
+        // Base name for api include files.
+        'api' => 'default_ctex_presets',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'id' => array(
+        'description' => 'Internal primary key',
+        'type' => 'int',
+        'not null' => TRUE,
+        'no export' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Machine name',
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => TRUE,
+      ),
+      'field_one' => array(
+        'description' => '#ADD A DESCRIPTION',
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => FALSE,
+      ),
+      'field_two' => array(
+        'description' => '#ADD A DESCRIPTION',
+        'type' => 'varchar',
+        'length' => '128',
+        'not null' => FALSE,
+      ),
+
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+  return $schema;
+}

@@ -1,0 +1,170 @@
+<?php
+/**
+ * @file
+ * Provides primary Drupal hook implementations.
+ *
+ * @author Jim Berry ("solotandem", http://drupal.org/user/240748)
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function portable_path_menu() {
+  module_load_include('inc', 'portable_path', 'includes/info');
+  return _portable_path_menu();
+}
+
+/**
+ * Implements hook_field_attach_load().
+ */
+function portable_path_field_attach_load($entity_type, $queried_entities, $age, $options) {
+/*
+  // @todo If caches are being cleared, calling menu_get_item() from here
+  // results in an infinite loop?
+  // Try to avoid filter processing except on entity edit.
+  $item = menu_get_item();
+  if (in_array($item['path'], array('user/%', 'node/%'))) {
+    // Filters have already been processed on view of user or node.
+    // @todo How to identify the viewing of other entities?
+    return;
+  }
+*/
+  module_load_include('inc', 'portable_path', 'includes/edit');
+  _portable_path_field_attach_load($entity_type, $queried_entities, $age, $options);
+}
+
+/**
+ * Implements hook_field_attach_presave().
+ */
+function portable_path_field_attach_presave($entity_type, $entity) {
+  module_load_include('inc', 'portable_path', 'includes/save');
+  _portable_path_field_attach_presave($entity_type, $entity);
+}
+
+/**
+ * Implements hook_filter_info().
+ */
+function portable_path_filter_info() {
+  module_load_include('inc', 'portable_path', 'includes/info');
+  return _portable_path_filter_info();
+}
+
+/**
+ * Filter process callback.
+ */
+function portable_path_file_id_process($text, $filter, $format) {
+  // Return a relative URL.
+  return preg_replace_callback('@\[portable:(\d+):(\w*)\]@', 'portable_path_file_id_process_callback', $text);
+}
+
+/**
+ * Filter process callback.
+ */
+function portable_path_file_id_process_callback($matches) {
+  if (isset($matches[1]) && $file = file_load($matches[1])) {
+    $uri = $file->uri;
+    if (!empty($matches[2])) {
+      // Add image style pathing to uri.
+      $uri = image_style_path($matches[2], $file->uri);
+    }
+    $target = file_uri_target($uri);
+    $scheme = file_uri_scheme($uri);
+    if ($path = portable_path_relative_url($scheme)) {
+      // Change to relative URL.
+      return $path . $target;
+    }
+  }
+  return $matches[0];
+}
+
+/**
+ * Filter tips callback.
+ */
+function portable_path_file_id_tips($filter, $format, $long = FALSE) {
+  $settings = portable_path_config();
+  $stream_wrappers = implode(', ', $settings['stream_wrappers']);
+  $field_types = implode(', ', $settings['field_types']); // Not displayed.
+  $field_names = implode(', ', $settings['field_names']);
+  $source = '[portable:fid:style]';
+  $replacement = portable_path_relative_url() . 'styles/style/public/path-to-file/filename';
+  if (!$long) {
+    // This string will be shown in the content add/edit form.
+    return t('Tokens containing a file ID and any associated image style, e.g. %source, will be replaced with full relative URLs, e.g. %replacement.', array('%stream_wrappers' => $stream_wrappers, '%field_names' => $field_names, '%source' => $source, '%replacement' => $replacement));
+  }
+  else {
+    return t('In %field_names fields, embedded tokens containing the file ID of a managed file and any associated image style, e.g. %source, will be replaced with full relative URLs, e.g. %replacement. The file URIs must be stored in <em>%stream_wrappers</em> stream wrapper notation.', array('%stream_wrappers' => $stream_wrappers, '%field_names' => $field_names, '%source' => $source, '%replacement' => $replacement));
+  }
+}
+
+/**
+ * Filter process callback.
+ */
+function portable_path_stream_wrapper_process($text, $filter, $format) {
+  $settings = portable_path_config();
+  foreach (array_filter($settings['stream_wrappers']) as $scheme) {
+    if ($path = portable_path_relative_url($scheme)) {
+      // Change to relative URL.
+      $text = str_replace($scheme . '://', $path, $text);
+    }
+  }
+  return $text;
+}
+
+/**
+ * Filter tips callback.
+ */
+function portable_path_stream_wrapper_tips($filter, $format, $long = FALSE) {
+  $settings = portable_path_config();
+  $stream_wrappers = implode(', ', $settings['stream_wrappers']);
+  $field_types = implode(', ', $settings['field_types']); // Not displayed.
+  $field_names = implode(', ', $settings['field_names']);
+  $source = 'public://path-to-file/filename';
+  $replacement = portable_path_relative_url() . 'path-to-file/filename';
+  if (!$long) {
+    // This string will be shown in the content add/edit form.
+    return t('URLs in stream wrapper notation, e.g. %source, will be replaced with full relative URLs, e.g. %replacement.', array('%stream_wrappers' => $stream_wrappers, '%source' => $source, '%replacement' => $replacement));
+  }
+  else {
+    return t('In %field_names fields, embedded URLs in <em>%stream_wrappers</em> stream wrapper notation, e.g. %source, will be replaced with full relative URLs, e.g. %replacement.', array('%stream_wrappers' => $stream_wrappers, '%field_names' => $field_names, '%source' => $source, '%replacement' => $replacement));
+  }
+}
+
+/**
+ * Returns the relative URL associated with a stream wrapper scheme.
+ *
+ * @param string $scheme
+ *   (optional) A stream wrapper scheme.
+ *
+ * @return string
+ *   The relative form of the external URL associated with the scheme.
+ */
+function portable_path_relative_url($scheme = 'public') {
+  $path = '';
+  if ($wrapper = file_stream_wrapper_get_instance_by_scheme($scheme)) {
+    $path = $wrapper->getExternalUrl();
+    $path = str_replace($GLOBALS['base_url'], '', $path);
+  }
+  return $path;
+}
+
+/**
+ * Returns the path configuration settings.
+ *
+ * @return array
+ *   An associative array of configuration settings.
+ */
+function portable_path_config() {
+  // Add defaults.
+  $defaults = array(
+    'stream_wrappers' => array('public', 'private'),
+    'field_types' => array('text_long', 'text_with_summary'),
+    'field_names' => array('body'),
+    // This granularity is not implemented.
+//     'entity_types' => array('node'),
+//     'bundles' => array(),
+  );
+  foreach ($defaults as $name => $default) {
+    $config[$name] = variable_get('portable_path_' . $name, $default);
+  }
+  return $config;
+}

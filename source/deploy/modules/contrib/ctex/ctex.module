@@ -1,0 +1,87 @@
+<?php
+/**
+ * @file
+ * Main ctex file
+ *
+ * @copyright Copyright(c) 2012 Christopher Skene
+ * @license GPL v2 http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Chris Skene chris at xtfer dot com
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function ctex_permission() {
+  return array(
+    'administer ctex' => array(
+      'title' => 'Administer ctex',
+    ),
+  );
+}
+
+/**
+ * Implements of hook_ctools_plugin_directory().
+ */
+function ctex_ctools_plugin_directory($module, $type) {
+  if ($type == 'export_ui') {
+    return 'plugins/export_ui';
+  }
+}
+
+/**
+ * Implements of hook_ctools_plugin_api().
+ */
+function ctex_ctools_plugin_api($owner, $api) {
+  if ($owner == 'ctex' && $api == 'default_ctex_presets') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_default_ctex_preset().
+ *
+ * Provide a default preset.
+ */
+function ctex_default_ctex_preset() {
+  $export = array();
+
+  $preset = new stdClass();
+  $preset->api_version = 1;
+  $preset->name = 'my_default_preset';
+  $preset->description = 'Default ctex preset';
+  $preset->mydata = 'x';
+  $export['my_default_preset'] = $preset;
+
+  return $export;
+}
+
+/**
+ * Load a single preset.
+ *
+ * @param string $pid
+ *   The preset identifier.
+ */
+function ctex_preset_load($pid) {
+  ctools_include('export');
+  $result = ctools_export_load_object('ctex_preset', 'names', array($pid));
+  if (isset($result[$pid])) {
+    return $result[$pid];
+  }
+}
+
+/**
+ * Export a ctex_preset.
+ *
+ * @param object $obj
+ *   The ctex object.
+ * @param string $indent
+ *   An identifier.
+ *
+ * @return string
+ *   The export definition.
+ */
+function ctex_preset_export($obj, $indent = '') {
+  ctools_include('export');
+  $output = ctools_export_object('ctex_preset', $obj, $indent);
+  return $output;
+}
